@@ -1,0 +1,8 @@
+# Natural Earth source layers, re-downloaded on demand by tools/build_data.py
+tools/cache/
+
+# Raw icon SVGs; only the generated sprite is needed
+tools/icons_raw/
+
+.DS_Store
+Thumbs.db
