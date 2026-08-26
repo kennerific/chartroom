@@ -30,30 +30,37 @@
 </svg>
 
 <header class="masthead">
-  <span class="brand">Chartroom</span>
-  <div class="tally">
-    <span class="track"><i id="tally-bar" style="width:0%"></i></span>
-    <span id="tally-text">counting</span>
+  <div class="masthead-in">
+    <span class="brand">Chartroom</span>
+    <div class="tally">
+      <span class="track"><i id="tally-bar" style="width:0%"></i></span>
+      <span id="tally-text" class="mono">counting</span>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Mode">
+      <button id="tab-learn" role="tab" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-book-open"></use></svg><span>Learn</span></button>
+      <button id="tab-exam" role="tab" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-graduation-cap"></use></svg><span>Exam</span></button>
+    </div>
+    <button class="iconbtn" id="theme" title="Switch light and dark" aria-label="Switch light and dark"><svg class="ic" aria-hidden="true"><use href="#i-moon" id="theme-glyph"></use></svg></button>
   </div>
-  <div class="spacer"></div>
-  <div class="tabs" role="tablist" aria-label="Mode">
-    <button id="tab-learn" role="tab" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-book-open"></use></svg><span>Learn</span></button>
-    <button id="tab-exam" role="tab" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-graduation-cap"></use></svg><span>Exam</span></button>
-  </div>
-  <button class="iconbtn" id="theme" title="Switch light and dark" aria-label="Switch light and dark"><svg class="ic" aria-hidden="true"><use href="#i-moon" id="theme-glyph"></use></svg></button>
 </header>
 
-<main class="wrap">
-  <div id="boot" class="loading">Loading chart data.</div>
+<div id="boot" class="boot">Loading chart data.</div>
 
-  <section id="view-learn" class="view" hidden>
-    <p class="lede"><b>Study a board, then drill it.</b> Six boards of eight to fourteen features. Studying walks you through each one and shows you where it sits; drilling hides the labels and asks you to find it from the name. A feature you have missed has to be found twice before it counts as known.</p>
-    <div class="boards" id="boards"></div>
+<div class="shell" id="shell" data-mode="learn" hidden>
 
-    <div id="board-wrap" hidden>
-      <div class="board-head">
-        <h2 id="board-name"></h2>
-        <div class="spacer"></div>
+  <aside class="rail" aria-label="Boards">
+    <div class="rail-head"><span class="eyebrow">Boards</span></div>
+    <nav class="rail-list" id="boards"></nav>
+    <p class="rail-note">Study a board to unlock its drill.</p>
+  </aside>
+
+  <main class="workspace">
+    <section id="view-learn" class="view">
+      <div class="wshead">
+        <div class="wstitle">
+          <h2 id="board-name"></h2>
+          <p class="wsnote" id="stage-note"></p>
+        </div>
         <div class="tabs" role="tablist" aria-label="Stage">
           <button id="stage-study" role="tab" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-book-open"></use></svg><span>Study</span></button>
           <button id="stage-drill" role="tab" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-crosshair"></use></svg><span>Drill</span></button>
@@ -63,24 +70,31 @@
         <div class="stage"><canvas id="map-learn" class="pick"></canvas><div class="tip" id="tip-learn"></div></div>
         <aside class="panel" id="panel-learn"></aside>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section id="view-exam" class="view" hidden>
-    <p class="lede" id="exam-readiness"></p>
-    <div class="work" id="exam-work">
-      <div class="stage"><canvas id="map-exam" class="pick"></canvas><div class="tip" id="tip-exam"></div></div>
-      <aside class="panel" id="panel-exam"></aside>
-    </div>
-    <div class="results" id="exam-results" hidden></div>
-  </section>
+    <section id="view-exam" class="view" hidden>
+      <div class="wshead">
+        <div class="wstitle">
+          <h2>Recall test</h2>
+          <p class="wsnote" id="exam-readiness"></p>
+        </div>
+      </div>
+      <div class="work" id="exam-work">
+        <div class="stage"><canvas id="map-exam" class="pick"></canvas><div class="tip" id="tip-exam"></div></div>
+        <aside class="panel" id="panel-exam"></aside>
+      </div>
+      <div class="results" id="exam-results" hidden></div>
+    </section>
+  </main>
+</div>
 
-  <footer class="foot">
+<footer class="foot">
+  <div class="foot-in">
     <span>Geometry from <a href="https://www.naturalearthdata.com/">Natural Earth</a> 1:50m, public domain.</span>
     <span>Icons from <a href="https://phosphoricons.com/">Phosphor</a>, MIT.</span>
     <span>Progress is stored in this browser only.</span>
-  </footer>
-</main>
+  </div>
+</footer>
 
 <script type="module" src="assets/app.js"></script>
 </body>

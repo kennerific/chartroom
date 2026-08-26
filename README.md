@@ -51,10 +51,13 @@ Opening `index.html` straight from the file system will fail the fetch and show
 an error telling you so.
 
 ```bash
-python -m http.server 8123
+python tools/devserver.py 8123
 ```
 
-Then open `http://localhost:8123`.
+Then open `http://localhost:8123`. That server sends `no-store`, because
+browsers cache ES modules hard enough that an edit to `assets/*.js` can keep
+running the old code through several reloads. `python -m http.server` works too
+if you do not mind fighting the cache.
 
 ## Regenerating the map data
 
@@ -116,6 +119,17 @@ ring along the -90 edge is valid as it stands.
 **Label anchors** come from a point-on-surface scan rather than a centroid. Long
 curved features like the Andes and the Himalaya have centroids that fall outside
 themselves, which would put the label and the zoom target in open water.
+
+**Layout** is an app shell: a persistent board rail on the left, the map as the
+hero, and the answer panel on the right. The rail keeps every board one click
+away and, being a list rather than a wrapping grid, never leaves orphan cells.
+Below 1100px the rail becomes a horizontal strip above the map, and below 880px
+the panel moves under the map. The map is capped at 62% of viewport height so
+the answer panel cannot be pushed off a short laptop screen.
+
+Standing instructions were replaced by one contextual line under the board name
+that changes with the stage, since a paragraph of rules at the top of a tool is
+read once and then becomes furniture.
 
 **Typography** follows the chart convention: hydrographic names in italic serif,
 terrestrial names in roman sans, continents in letterspaced caps.

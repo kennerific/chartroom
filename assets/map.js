@@ -127,12 +127,18 @@ export class MapView {
     data.items.forEach((i) => (this.byId[i.id] = i));
     this._ro = new ResizeObserver(() => this.resize());
     this._ro.observe(canvas.parentElement);
+    // The observer covers container changes, but not a viewport resize that
+    // leaves the container the same width while changing how much height is
+    // available, nor a devicePixelRatio change from moving between displays.
+    this._onWin = () => this.resize();
+    addEventListener("resize", this._onWin);
     this.resize();
   }
 
   destroy() {
     if (this.anim) cancelAnimationFrame(this.anim);
     this._ro.disconnect();
+    removeEventListener("resize", this._onWin);
   }
 
   css(n) {
@@ -144,7 +150,11 @@ export class MapView {
     if (!rect.width) return;
     const dpr = Math.min(devicePixelRatio || 1, 2);
     this.w = rect.width;
-    this.h = Math.max(240, Math.round(this.w * this.opts.ratio));
+    // Keep the map from growing taller than the screen on a short laptop
+    // display, where a pure aspect ratio would push the answer panel off-screen.
+    const ideal = Math.round(this.w * this.opts.ratio);
+    const cap = Math.round(innerHeight * 0.62);
+    this.h = Math.max(240, Math.min(ideal, Math.max(cap, 240)));
     this.cv.width = Math.round(this.w * dpr);
     this.cv.height = Math.round(this.h * dpr);
     this.cv.style.height = this.h + "px";

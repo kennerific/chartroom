@@ -30,19 +30,35 @@ const exam = {
 /* =========================================================== boot */
 initTheme();
 
-fetch("assets/mapdata.json")
-  .then((r) => {
+function bootFailed(msg, err) {
+  const b = el("boot");
+  b.hidden = false;
+  b.className = "boot failed";
+  b.textContent = msg;
+  if (err) console.error(err);
+}
+
+// Loading the data and starting the app fail for different reasons, so they get
+// different messages. Folding them into one catch reported every code error as
+// a missing-file error.
+(async function boot() {
+  let data;
+  try {
+    const r = await fetch("assets/mapdata.json");
     if (!r.ok) throw new Error("HTTP " + r.status);
-    return r.json();
-  })
-  .then(start)
-  .catch((err) => {
-    el("boot").className = "failed";
-    el("boot").textContent =
+    data = await r.json();
+  } catch (err) {
+    return bootFailed(
       "Could not load assets/mapdata.json (" + err.message +
-      "). Open the site over HTTP rather than from the file system, or run " +
-      "python tools/build_data.py to generate it.";
-  });
+      "). Serve the site over HTTP rather than opening the file directly, or run " +
+      "python tools/build_data.py to generate it.", err);
+  }
+  try {
+    start(data);
+  } catch (err) {
+    bootFailed("The chart data loaded, but the interface failed to start: " + err.message, err);
+  }
+})();
 
 function start(data) {
   DATA = data;
@@ -52,6 +68,9 @@ function start(data) {
   store = new Store();
 
   el("boot").hidden = true;
+  // Unhide before constructing the maps: a canvas inside display:none has no
+  // measurable box, so it would size to nothing.
+  el("shell").hidden = false;
   el("tab-learn").onclick = () => setMode("learn");
   el("tab-exam").onclick = () => setMode("exam");
   syncThemeGlyph();
@@ -86,6 +105,9 @@ function setMode(m) {
   mode = m;
   el("tab-learn").setAttribute("aria-selected", m === "learn");
   el("tab-exam").setAttribute("aria-selected", m === "exam");
+  // The exam has nothing to do with boards, so the rail collapses and the
+  // world view gets the full width.
+  el("shell").dataset.mode = m;
   el("view-learn").hidden = m !== "learn";
   el("view-exam").hidden = m !== "exam";
   // A canvas that was display:none has no measurable box, so size it now that
@@ -149,16 +171,18 @@ function renderBoards() {
     const known = store.knownCount(r.ids);
     const pct = Math.round((known / r.ids.length) * 100);
     const done = known === r.ids.length;
+    const studied = store.studied(r.id);
+    const state = done ? "mastered" : studied ? "drilling" : "new";
+    const glyph = done ? "check" : studied ? "crosshair" : "lock-simple";
+    const label = done ? "Mastered" : studied ? "Studied, drilling" : "Not studied yet";
     const b = document.createElement("button");
-    b.className = "board-card";
+    b.className = "brow";
+    b.dataset.state = state;
+    b.title = r.name + ". " + label + ". " + known + " of " + r.ids.length + " known.";
     b.setAttribute("aria-current", board && board.id === r.id ? "true" : "false");
     b.innerHTML =
       '<span class="bn">' + r.name + "</span>" +
-      (done
-        ? '<span class="badge done">' + ic("check") + " MASTERED</span>"
-        : store.studied(r.id)
-        ? '<span class="badge study">DRILLING</span>'
-        : '<span class="badge">NOT STUDIED</span>') +
+      '<span class="bic" aria-hidden="true">' + ic(glyph) + "</span>" +
       '<span class="bmeta"><span class="bar"><i style="width:' + pct + '%"></i></span>' +
       "<span>" + known + "/" + r.ids.length + "</span></span>";
     b.onclick = () => selectBoard(r, true);
@@ -168,9 +192,6 @@ function renderBoards() {
 
 function selectBoard(r, animate) {
   board = r;
-  const wasHidden = el("board-wrap").hidden;
-  el("board-wrap").hidden = false;
-  if (wasHidden) mapL.resize();
   el("board-name").textContent = r.name;
   // Study first. Once a board has been walked through, land straight on the drill.
   stage = store.studied(r.id) ? "drill" : "study";
@@ -191,11 +212,31 @@ function setStage(s) {
 }
 
 /* =========================================================== panel */
+/** One contextual line under the board name, in place of a standing paragraph
+ *  of instructions nobody rereads. */
+function stageNote() {
+  const known = store.knownCount(board.ids);
+  const total = board.ids.length;
+  if (known === total) {
+    return "<b>Board mastered.</b> All " + total +
+      " features known. Pick another board, or sit the recall test.";
+  }
+  if (stage === "study") {
+    return "Walk each feature once to see where it sits. " +
+      "Finishing unlocks the drill, or skip ahead if you already know this board.";
+  }
+  return "Labels are off. Click the feature named on the right. " +
+    "Anything you miss has to be found twice before it counts as known.";
+}
+
 function renderPanel() {
   const drillLocked = !store.studied(board.id);
   el("stage-study").setAttribute("aria-selected", stage === "study");
   el("stage-drill").setAttribute("aria-selected", stage === "drill");
   el("stage-drill").disabled = drillLocked;
+  el("stage-drill").title = drillLocked
+    ? "Study this board once to unlock the drill"
+    : "Recall drill for this board";
   el("stage-drill").innerHTML =
     (drillLocked ? ic("lock-simple") : ic("crosshair")) + "<span>Drill</span>";
 
@@ -208,6 +249,7 @@ function renderPanel() {
 
 /* ---------------------------------------------------------- study */
 function renderStudy() {
+  el("stage-note").innerHTML = stageNote();
   const ids = board.ids;
   const it = BY_ID[ids[study.i]];
   const last = study.i === ids.length - 1;
@@ -285,6 +327,7 @@ function resetDrill() {
 }
 
 function renderDrill() {
+  el("stage-note").innerHTML = stageNote();
   mapL.opts.labels = false;
   const known = store.knownCount(board.ids);
   const total = board.ids.length;
